@@ -40,6 +40,15 @@ export function useKeyboardNavigation({
         }
       }
 
+      if (e.key === 'F1') {
+        e.preventDefault()
+        const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+        if (searchInput) {
+          searchInput.focus()
+        }
+        return
+      }
+
       if (e.key === 'ArrowDown' && !e.shiftKey) {
         e.preventDefault()
         if (selectedIndex < cardsLength - 1) {
