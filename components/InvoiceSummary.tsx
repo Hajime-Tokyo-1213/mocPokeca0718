@@ -15,25 +15,25 @@ export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSum
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">合計</h2>
+    <div className="bg-white rounded-lg shadow-sm p-4 print:p-2">
+      <div className="flex justify-between items-center mb-4 print:mb-2">
+        <h2 className="text-lg font-semibold print:text-sm">合計</h2>
         <div className="text-right">
-          <div className="text-sm text-gray-600">合計数量: {totalQuantity}点</div>
-          <div className="text-2xl font-bold text-green-600">¥{totalPrice.toLocaleString()}</div>
+          <div className="text-xs text-gray-600 print:text-[10px]">合計数量: {totalQuantity}点</div>
+          <div className="text-xl font-bold text-green-600 print:text-sm">¥{totalPrice.toLocaleString()}</div>
         </div>
       </div>
       
       <div className="flex gap-4 print:hidden">
         <button
           onClick={handlePDFExport}
-          className="flex-1 px-6 py-3 bg-blue-500 text-white rounded font-medium hover:bg-blue-600 transition-colors"
+          className="flex-1 px-4 py-2 bg-blue-500 text-white rounded font-medium hover:bg-blue-600 transition-colors text-sm"
         >
           PDFとして出力
         </button>
         <button
           onClick={clearInvoice}
-          className="px-6 py-3 bg-gray-500 text-white rounded font-medium hover:bg-gray-600 transition-colors"
+          className="px-4 py-2 bg-gray-500 text-white rounded font-medium hover:bg-gray-600 transition-colors text-sm"
         >
           クリア
         </button>

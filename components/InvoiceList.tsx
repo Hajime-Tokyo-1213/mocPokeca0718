@@ -8,14 +8,12 @@ export default function InvoiceList() {
 
   return (
     <div>
-      <div className="hidden md:flex items-center px-4 py-2 text-sm font-semibold text-gray-600 border-b bg-gray-50">
+      <div className="flex items-center px-2 py-1 text-xs font-semibold text-gray-600 border-b bg-gray-50 print:text-[10px] print:py-0.5">
         <div className="flex-1">商品タイトル</div>
-        <div className="w-24">商品型番</div>
-        <div className="w-20 text-center">レアリティ</div>
-        <div className="w-24 text-right">買取単価</div>
-        <div className="w-20 text-center">数量</div>
-        <div className="w-24 text-right">小計</div>
-        <div className="w-20 text-center print:hidden">操作</div>
+        <div className="w-20 text-right print:w-16">買取単価</div>
+        <div className="w-12 text-center print:w-10">数量</div>
+        <div className="w-20 text-right print:w-16">小計</div>
+        <div className="w-16 text-center print:hidden">操作</div>
       </div>
       <div className="divide-y divide-gray-100">
         {items.map((item) => (

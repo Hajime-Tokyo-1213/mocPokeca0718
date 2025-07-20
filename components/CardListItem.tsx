@@ -4,6 +4,7 @@ import { Card } from '@/types/card'
 import QuantitySelector from './QuantitySelector'
 import { useInvoice } from '@/contexts/InvoiceContext'
 import Image from 'next/image'
+import { useEffect } from 'react'
 
 interface CardListItemProps {
   card: Card
@@ -22,12 +23,28 @@ export default function CardListItem({
 }: CardListItemProps) {
   const { addItem } = useInvoice()
 
-  const handleAddToInvoice = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleAddToInvoice = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation()
+    }
     if (quantity > 0) {
       addItem(card, quantity)
+      // 数量をリセット
+      onQuantityChange(card.cardId, 0)
     }
   }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSelected && e.key === 'Enter' && !(e.target instanceof HTMLInputElement)) {
+        e.preventDefault()
+        handleAddToInvoice()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isSelected, quantity])
   return (
     <div 
       className={`

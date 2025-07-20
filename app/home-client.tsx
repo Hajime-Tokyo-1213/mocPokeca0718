@@ -14,7 +14,7 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
   const [searchValue, setSearchValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [quantities, setQuantities] = useState<{ [cardId: string]: number }>({})
-  const { getTotalQuantity } = useInvoice()
+  const { getTotalQuantity, addItem } = useInvoice()
 
   const filteredCards = useMemo(() => {
     if (!searchValue) return []
@@ -39,8 +39,18 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
 
   const handleSelectedQuantityChange = (delta: number) => {
     if (selectedCard) {
-      const currentQuantity = quantities[selectedCard.cardId] || 0
-      handleQuantityChange(selectedCard.cardId, currentQuantity + delta)
+      if (delta === 0) {
+        // Enterキーが押された場合、現在の数量を納品書に追加
+        const currentQuantity = quantities[selectedCard.cardId] || 0
+        if (currentQuantity > 0) {
+          addItem(selectedCard, currentQuantity)
+          // 追加後、数量をリセット
+          handleQuantityChange(selectedCard.cardId, 0)
+        }
+      } else {
+        const currentQuantity = quantities[selectedCard.cardId] || 0
+        handleQuantityChange(selectedCard.cardId, currentQuantity + delta)
+      }
     }
   }
 
@@ -100,6 +110,7 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
             <li>検索欄: ← → キーで数値を増減、F1キーでフォーカス</li>
             <li>カードリスト: ↑ ↓ キーで選択カードを移動、クリックで選択</li>
             <li>数量変更: Shift + ↑ ↓ キーで選択カードの数量を増減</li>
+            <li>納品書へ追加: Enter キーで選択カードを納品書に追加</li>
           </ul>
         </div>
       </div>

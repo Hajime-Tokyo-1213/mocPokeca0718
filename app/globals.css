@@ -29,6 +29,8 @@ body {
   body {
     background: white;
     color: black;
+    font-size: 10px;
+    line-height: 1.2;
   }
   .print\:hidden {
     display: none !important;
@@ -39,9 +41,39 @@ body {
   .print\:inline {
     display: inline !important;
   }
+  .print\:flex {
+    display: flex !important;
+  }
   
   @page {
     size: A4;
-    margin: 20mm;
+    margin: 10mm 10mm 15mm 10mm;
+  }
+  
+  /* コンパクトな印刷レイアウト */
+  .min-h-screen {
+    min-height: auto;
+  }
+  
+  .p-6 {
+    padding: 0;
+  }
+  
+  .mb-8 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .rounded-lg {
+    border-radius: 0;
+  }
+  
+  .shadow-sm {
+    box-shadow: none;
+  }
+  
+  /* タイトルをコンパクトに */
+  h1 {
+    font-size: 16px !important;
+    margin-bottom: 0.5rem !important;
   }
 }

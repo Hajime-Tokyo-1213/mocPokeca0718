@@ -11,6 +11,7 @@ interface InvoiceContextType {
   items: InvoiceItem[]
   addItem: (card: Card, quantity: number) => void
   updateQuantity: (cardId: string, quantity: number) => void
+  updatePrice: (cardId: string, price: string) => void
   removeItem: (cardId: string) => void
   clearInvoice: () => void
   getTotalQuantity: () => number
@@ -44,6 +45,16 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const updatePrice = (cardId: string, price: string) => {
+    setItems(prev => 
+      prev.map(item => 
+        item.cardId === cardId 
+          ? { ...item, 買取価格: price }
+          : item
+      )
+    )
+  }
+
   const removeItem = (cardId: string) => {
     setItems(prev => prev.filter(item => item.cardId !== cardId))
   }
@@ -68,6 +79,7 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
       items,
       addItem,
       updateQuantity,
+      updatePrice,
       removeItem,
       clearInvoice,
       getTotalQuantity,

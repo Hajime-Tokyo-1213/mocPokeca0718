@@ -65,6 +65,9 @@ export function useKeyboardNavigation({
       } else if (e.key === 'ArrowDown' && e.shiftKey) {
         e.preventDefault()
         onQuantityChange(-1)
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        onQuantityChange(0)
       }
     }
 

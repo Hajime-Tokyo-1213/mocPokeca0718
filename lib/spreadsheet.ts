@@ -1,6 +1,5 @@
 import { Card } from '@/types/card'
 import Papa from 'papaparse'
-import { fetchAllImageData, ImageData } from './imageSpreadsheet'
 
 export type CardData = {
   [key: string]: Card[]
@@ -12,16 +11,12 @@ const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/t
 
 export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
   try {
-    console.log('Fetching data from spreadsheet:', CSV_URL)
+    console.log('Fetching card base data from spreadsheet:', CSV_URL)
     
-    // カードデータと画像データを並行して取得
-    const [cardResponse, imageDataList] = await Promise.all([
-      fetch(CSV_URL, {
+    const cardResponse = await fetch(CSV_URL, {
         next: { revalidate: 300 }, // 5分ごとにキャッシュを更新
-        cache: 'no-store' // 開発時はキャッシュを無効化
-      }),
-      fetchAllImageData()
-    ])
+        cache: 'no-store' // キャッシュを無効化
+      })
     
     if (!cardResponse.ok) {
       console.error(`Failed to fetch data: Status ${cardResponse.status}`)
@@ -30,56 +25,24 @@ export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
     
     const csvText = await cardResponse.text()
     console.log('CSV data received, length:', csvText.length)
-    console.log('Image data received, count:', imageDataList.length)
     
-    const cardData = parseCSVToCardData(csvText, imageDataList)
+    const cardData = parseCSVToCardData(csvText)
     console.log('Parsed card data keys:', Object.keys(cardData))
     
     return cardData
   } catch (error) {
     console.error('Error fetching spreadsheet data:', error)
-    // エラー時は空のデータを返す（完全なエラーにしない）
     return {}
   }
 }
 
-// 画像URLを照合する関数
-function matchImageUrl(card: Card, imageDataList: ImageData[]): string {
-  // 一次絞り込み: 型番での照合
-  const matchingByModelNumber = imageDataList.filter(img => 
-    img.modelNumber && card.商品型番.includes(img.modelNumber)
-  )
-  
-  if (matchingByModelNumber.length === 0) {
-    return '' // 画像が見つからない
-  }
-  
-  if (matchingByModelNumber.length === 1) {
-    return matchingByModelNumber[0].imageUrl
-  }
-  
-  // 二次絞り込み: キャラクター名での照合
-  const matchingByCharacter = matchingByModelNumber.filter(img =>
-    img.characterName && card.商品タイトル.includes(img.characterName)
-  )
-  
-  if (matchingByCharacter.length > 0) {
-    return matchingByCharacter[0].imageUrl
-  }
-  
-  // キャラクター名でマッチしない場合は、最初の画像を使用
-  return matchingByModelNumber[0].imageUrl
-}
-
-function parseCSVToCardData(csvText: string, imageDataList: ImageData[]): CardData {
+function parseCSVToCardData(csvText: string): CardData {
   const cardData: CardData = {}
 
-  // Papa.parseを使用してCSVをパース
   const parsed = Papa.parse(csvText, {
-    header: false, // 1行目はヘッダーではない
+    header: false,
   })
 
-  // 3行目からデータを処理 (インデックスは2から)
   if (parsed.data.length < 3) {
     return {}
   }
@@ -89,18 +52,14 @@ function parseCSVToCardData(csvText: string, imageDataList: ImageData[]): CardDa
     
     if (row.length >= 4) {
       const card: Card = {
-        cardId: `${row[1]}-${row[0]}`.replace(/\//g, '-'), // 型番と商品タイトルからIDを生成
+        cardId: `${row[1]}-${row[0]}`.replace(/\//g, '-'),
         商品タイトル: row[0],
         商品型番: row[1],
         レアリティ: row[2],
         買取価格: row[3],
-        imageUrl: '' // 一旦空で作成
+        imageUrl: '/no-image.svg' // デフォルト画像を設定
       }
       
-      // 画像URLを照合
-      card.imageUrl = matchImageUrl(card, imageDataList)
-      
-      // 買取価格をキーとしてグループ化
       const priceKey = row[3]
       if (!cardData[priceKey]) {
         cardData[priceKey] = []
