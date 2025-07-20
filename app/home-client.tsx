@@ -101,6 +101,20 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
       if (selectedIndex > 0) {
         setSelectedIndex(selectedIndex - 1)
       }
+    },
+    onSwipeUp: () => {
+      // 上スワイプで型番を減らす（左矢印と同じ）
+      const numValue = parseInt(searchValue) || 0
+      if (numValue > 0) {
+        setSearchValue(String(numValue - 1).padStart(3, '0'))
+      }
+    },
+    onSwipeDown: () => {
+      // 下スワイプで型番を増やす（右矢印と同じ）
+      const numValue = parseInt(searchValue) || 0
+      if (numValue < 999) {
+        setSearchValue(String(numValue + 1).padStart(3, '0'))
+      }
     }
   })
 
@@ -132,11 +146,18 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
                 </>
               )}
             </button>
-            <Link href="/invoice">
-              <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out transform hover:scale-105">
-                納品書を見る
-              </button>
-            </Link>
+            <div className="relative">
+              <Link href="/invoice">
+                <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out transform hover:scale-105">
+                  納品書を見る
+                </button>
+              </Link>
+              {getTotalQuantity() > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                  {getTotalQuantity()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </header>

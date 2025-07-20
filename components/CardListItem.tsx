@@ -4,7 +4,6 @@ import { Card } from '@/types/card'
 import QuantitySelector from './QuantitySelector'
 import { useInvoice } from '@/contexts/InvoiceContext'
 import Image from 'next/image'
-import { useEffect } from 'react'
 
 interface CardListItemProps {
   card: Card
@@ -34,17 +33,6 @@ export default function CardListItem({
     }
   }
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSelected && e.key === 'Enter' && !(e.target instanceof HTMLInputElement)) {
-        e.preventDefault()
-        handleAddToInvoice()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isSelected, quantity])
   return (
     <div 
       className={`

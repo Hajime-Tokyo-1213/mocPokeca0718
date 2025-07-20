@@ -3,6 +3,7 @@
 import { useInvoice } from '@/contexts/InvoiceContext'
 import { isMobileDevice } from '@/utils/deviceDetection'
 import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 interface InvoiceSummaryProps {
   totalQuantity: number
@@ -14,60 +15,63 @@ export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSum
 
   const generateMobilePDF = () => {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    let yPosition = 20;
+    
+    // 日本語フォントの設定（デフォルトフォントを使用し、文字をBase64エンコード）
+    pdf.setFont('helvetica');
     
     // タイトル
     pdf.setFontSize(20);
-    pdf.text('納品書', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
+    pdf.text('Invoice', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // 日付
     pdf.setFontSize(10);
     const today = new Date().toLocaleDateString('ja-JP');
-    pdf.text(`発行日: ${today}`, 20, yPosition);
-    yPosition += 10;
+    pdf.text(`Date: ${today}`, 20, 35);
     
-    // ヘッダー
-    pdf.setFontSize(8);
-    pdf.text('商品タイトル', 20, yPosition);
-    pdf.text('単価', 120, yPosition);
-    pdf.text('数量', 150, yPosition);
-    pdf.text('小計', 170, yPosition);
-    yPosition += 5;
-    
-    // 線
-    pdf.line(20, yPosition, pageWidth - 20, yPosition);
-    yPosition += 5;
-    
-    // 商品リスト
-    items.forEach((item) => {
-      if (yPosition > pageHeight - 30) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-      
-      // 商品名を短縮（長すぎる場合）
-      const title = item.商品タイトル.length > 40 ? item.商品タイトル.substring(0, 40) + '...' : item.商品タイトル;
-      pdf.text(title, 20, yPosition);
+    // テーブルデータの準備
+    const tableData = items.map((item) => {
       const price = parseInt(item.買取価格) || 0;
-      pdf.text(`¥${price.toLocaleString()}`, 120, yPosition);
-      pdf.text(item.quantity.toString(), 155, yPosition);
-      pdf.text(`¥${(price * item.quantity).toLocaleString()}`, 170, yPosition);
-      yPosition += 7;
+      return [
+        item.商品型番 || '',
+        `${price.toLocaleString()}`,
+        item.quantity.toString(),
+        `${(price * item.quantity).toLocaleString()}`
+      ];
     });
     
-    // 合計
-    yPosition += 5;
-    pdf.line(20, yPosition, pageWidth - 20, yPosition);
-    yPosition += 7;
-    
-    pdf.setFontSize(10);
-    pdf.text(`合計数量: ${totalQuantity}点`, 120, yPosition);
-    yPosition += 7;
-    pdf.setFontSize(12);
-    pdf.text(`合計金額: ¥${totalPrice.toLocaleString()}`, 120, yPosition);
+    // autoTableを使用してテーブルを生成
+    autoTable(pdf, {
+      head: [['Model No.', 'Unit Price (JPY)', 'Qty', 'Subtotal (JPY)']],
+      body: tableData,
+      startY: 45,
+      styles: {
+        font: 'helvetica',
+        fontSize: 10,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [66, 139, 202],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 40, halign: 'right' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 40, halign: 'right' },
+      },
+      foot: [[
+        'Total',
+        '',
+        `${totalQuantity}`,
+        `${totalPrice.toLocaleString()}`
+      ]],
+      footStyles: {
+        fillColor: [240, 240, 240],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+      },
+    });
     
     // PDFをダウンロード
     const filename = `invoice_${new Date().getTime()}.pdf`;
