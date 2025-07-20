@@ -6,14 +6,17 @@ import SearchBar from '@/components/SearchBar'
 import CardList from '@/components/CardList'
 import CardDetailView from '@/components/CardDetailView'
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'
+import { useSwipeNavigation } from '@/hooks/useSwipeNavigation'
 import { useInvoice } from '@/contexts/InvoiceContext'
 import { Card } from '@/types/card'
 import { CardData } from '@/lib/spreadsheet'
 
-export default function HomeClient({ cardData }: { cardData: CardData }) {
+export default function HomeClient({ cardData: initialCardData }: { cardData: CardData }) {
   const [searchValue, setSearchValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [quantities, setQuantities] = useState<{ [cardId: string]: number }>({})
+  const [cardData, setCardData] = useState<CardData>(initialCardData)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { getTotalQuantity, addItem } = useInvoice()
 
   const filteredCards = useMemo(() => {
@@ -54,6 +57,28 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
     }
   }
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const response = await fetch('/api/refresh-data')
+      const result = await response.json()
+      
+      if (result.success) {
+        setCardData(result.data)
+        // 選択インデックスをリセット
+        setSelectedIndex(0)
+      } else {
+        console.error('Failed to refresh data')
+        alert('データの更新に失敗しました')
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+      alert('データの更新中にエラーが発生しました')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   useKeyboardNavigation({
     cardsLength: filteredCards.length,
     selectedIndex,
@@ -63,26 +88,59 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
     onSearchValueChange: setSearchValue,
   })
 
+  // スワイプナビゲーションの追加
+  useSwipeNavigation({
+    onSwipeLeft: () => {
+      // 左スワイプで次のカードへ（下矢印と同じ）
+      if (selectedIndex < filteredCards.length - 1) {
+        setSelectedIndex(selectedIndex + 1)
+      }
+    },
+    onSwipeRight: () => {
+      // 右スワイプで前のカードへ（上矢印と同じ）
+      if (selectedIndex > 0) {
+        setSelectedIndex(selectedIndex - 1)
+      }
+    }
+  })
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            ポケモンカード買取検索システム
-          </h1>
-          <Link
-            href="/invoice"
-            className="relative px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            納品書を見る
-            {getTotalQuantity() > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                {getTotalQuantity()}
-              </span>
-            )}
-          </Link>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">ポケサーチ</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isRefreshing ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  更新中...
+                </>
+              ) : (
+                <>
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  データ更新
+                </>
+              )}
+            </button>
+            <Link href="/invoice">
+              <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-300 ease-in-out transform hover:scale-105">
+                納品書を見る
+              </button>
+            </Link>
+          </div>
         </div>
-        
+      </header>
+      <main className="container mx-auto px-4 py-6">
         <SearchBar 
           value={searchValue}
           onChange={setSearchValue}
@@ -113,7 +171,7 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
             <li>納品書へ追加: Enter キーで選択カードを納品書に追加</li>
           </ul>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

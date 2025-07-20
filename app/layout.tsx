@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ポケモンカード買取検索システム",
-  description: "ポケモンカードの買取価格検索と納品書作成システム",
-};
+  title: 'ポケサーチ',
+  description: 'ポケモンカードの買取価格を検索できます。',
+}
 
 export default function RootLayout({
   children,
