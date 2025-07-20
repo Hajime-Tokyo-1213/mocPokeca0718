@@ -23,7 +23,7 @@ export default function CardDetailView({ card }: CardDetailViewProps) {
     <div className="h-full flex flex-col items-center justify-center p-6">
       <div className="relative w-full max-w-md aspect-[2.5/3.5] mb-4">
         <Image
-          src={card.imageUrl}
+          src={card.imageUrl || '/no-image.svg'}
           alt={card.商品タイトル}
           fill
           className="object-contain rounded-lg shadow-xl"

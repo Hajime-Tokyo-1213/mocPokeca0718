@@ -1,5 +1,6 @@
 import { Card } from '@/types/card'
 import Papa from 'papaparse'
+import { fetchAllImageData, ImageData } from './imageSpreadsheet'
 
 export type CardData = {
   [key: string]: Card[]
@@ -13,20 +14,25 @@ export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
   try {
     console.log('Fetching data from spreadsheet:', CSV_URL)
     
-    const response = await fetch(CSV_URL, {
-      next: { revalidate: 300 }, // 5分ごとにキャッシュを更新
-      cache: 'no-store' // 開発時はキャッシュを無効化
-    })
+    // カードデータと画像データを並行して取得
+    const [cardResponse, imageDataList] = await Promise.all([
+      fetch(CSV_URL, {
+        next: { revalidate: 300 }, // 5分ごとにキャッシュを更新
+        cache: 'no-store' // 開発時はキャッシュを無効化
+      }),
+      fetchAllImageData()
+    ])
     
-    if (!response.ok) {
-      console.error(`Failed to fetch data: Status ${response.status}`)
-      throw new Error(`Failed to fetch data: ${response.status}`)
+    if (!cardResponse.ok) {
+      console.error(`Failed to fetch data: Status ${cardResponse.status}`)
+      throw new Error(`Failed to fetch data: ${cardResponse.status}`)
     }
     
-    const csvText = await response.text()
+    const csvText = await cardResponse.text()
     console.log('CSV data received, length:', csvText.length)
+    console.log('Image data received, count:', imageDataList.length)
     
-    const cardData = parseCSVToCardData(csvText)
+    const cardData = parseCSVToCardData(csvText, imageDataList)
     console.log('Parsed card data keys:', Object.keys(cardData))
     
     return cardData
@@ -37,7 +43,35 @@ export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
   }
 }
 
-function parseCSVToCardData(csvText: string): CardData {
+// 画像URLを照合する関数
+function matchImageUrl(card: Card, imageDataList: ImageData[]): string {
+  // 一次絞り込み: 型番での照合
+  const matchingByModelNumber = imageDataList.filter(img => 
+    img.modelNumber && card.商品型番.includes(img.modelNumber)
+  )
+  
+  if (matchingByModelNumber.length === 0) {
+    return '' // 画像が見つからない
+  }
+  
+  if (matchingByModelNumber.length === 1) {
+    return matchingByModelNumber[0].imageUrl
+  }
+  
+  // 二次絞り込み: キャラクター名での照合
+  const matchingByCharacter = matchingByModelNumber.filter(img =>
+    img.characterName && card.商品タイトル.includes(img.characterName)
+  )
+  
+  if (matchingByCharacter.length > 0) {
+    return matchingByCharacter[0].imageUrl
+  }
+  
+  // キャラクター名でマッチしない場合は、最初の画像を使用
+  return matchingByModelNumber[0].imageUrl
+}
+
+function parseCSVToCardData(csvText: string, imageDataList: ImageData[]): CardData {
   const cardData: CardData = {}
 
   // Papa.parseを使用してCSVをパース
@@ -60,8 +94,11 @@ function parseCSVToCardData(csvText: string): CardData {
         商品型番: row[1],
         レアリティ: row[2],
         買取価格: row[3],
-        imageUrl: '' // 画像URLは改修範囲外のため空文字
+        imageUrl: '' // 一旦空で作成
       }
+      
+      // 画像URLを照合
+      card.imageUrl = matchImageUrl(card, imageDataList)
       
       // 買取価格をキーとしてグループ化
       const priceKey = row[3]

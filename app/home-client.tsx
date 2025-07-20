@@ -22,9 +22,9 @@ export default function HomeClient({ cardData }: { cardData: CardData }) {
     // すべてのカードを1つの配列にフラット化
     const allCards = Object.values(cardData).flat()
 
-    // 商品型番の前方一致でフィルタリング
+    // 商品型番が存在し、文字列であることも確認してからフィルタリングする
     return allCards.filter(card =>
-      card.商品型番.startsWith(searchValue)
+      card && typeof card.商品型番 === 'string' && card.商品型番.startsWith(searchValue)
     )
   }, [searchValue, cardData])
 

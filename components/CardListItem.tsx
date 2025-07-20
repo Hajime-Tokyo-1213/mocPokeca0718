@@ -3,6 +3,7 @@
 import { Card } from '@/types/card'
 import QuantitySelector from './QuantitySelector'
 import { useInvoice } from '@/contexts/InvoiceContext'
+import Image from 'next/image'
 
 interface CardListItemProps {
   card: Card
