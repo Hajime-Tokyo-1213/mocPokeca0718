@@ -90,30 +90,30 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
 
   // スワイプナビゲーションの追加
   useSwipeNavigation({
-    onSwipeLeft: () => {
-      // 左スワイプで次のカードへ（下矢印と同じ）
-      if (selectedIndex < filteredCards.length - 1) {
-        setSelectedIndex(selectedIndex + 1)
-      }
-    },
-    onSwipeRight: () => {
-      // 右スワイプで前のカードへ（上矢印と同じ）
+    onSwipeUp: () => {
+      // 上スワイプで前のカードへ（上矢印と同じ）
       if (selectedIndex > 0) {
         setSelectedIndex(selectedIndex - 1)
       }
     },
-    onSwipeUp: () => {
-      // 上スワイプで型番を減らす（左矢印と同じ）
-      const numValue = parseInt(searchValue) || 0
-      if (numValue > 0) {
-        setSearchValue(String(numValue - 1).padStart(3, '0'))
+    onSwipeDown: () => {
+      // 下スワイプで次のカードへ（下矢印と同じ）
+      if (selectedIndex < filteredCards.length - 1) {
+        setSelectedIndex(selectedIndex + 1)
       }
     },
-    onSwipeDown: () => {
-      // 下スワイプで型番を増やす（右矢印と同じ）
+    onSwipeLeft: () => {
+      // 左スワイプで型番を増やす
       const numValue = parseInt(searchValue) || 0
       if (numValue < 999) {
         setSearchValue(String(numValue + 1).padStart(3, '0'))
+      }
+    },
+    onSwipeRight: () => {
+      // 右スワイプで型番を減らす
+      const numValue = parseInt(searchValue) || 0
+      if (numValue > 0) {
+        setSearchValue(String(numValue - 1).padStart(3, '0'))
       }
     }
   })

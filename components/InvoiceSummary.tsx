@@ -5,6 +5,9 @@ import { isMobileDevice } from '@/utils/deviceDetection'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+// Noto Sans JPフォントのBase64データをインポート
+import { notoSansJpNormal } from '@/lib/notoJpFont';
+
 interface InvoiceSummaryProps {
   totalQuantity: number
   totalPrice: number
@@ -13,20 +16,24 @@ interface InvoiceSummaryProps {
 export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSummaryProps) {
   const { clearInvoice, items } = useInvoice()
 
-  const generateMobilePDF = () => {
+  const generateMobilePDF = async () => {
     const pdf = new jsPDF('p', 'mm', 'a4');
     
-    // 日本語フォントの設定（デフォルトフォントを使用し、文字をBase64エンコード）
-    pdf.setFont('helvetica');
+    // フォントを追加
+    pdf.addFileToVFS('NotoSansJP-Regular.ttf', notoSansJpNormal);
+    pdf.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
+    
+    // 日本語フォントを設定
+    pdf.setFont('NotoSansJP');
     
     // タイトル
     pdf.setFontSize(20);
-    pdf.text('Invoice', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+    pdf.text('納品書 / Invoice', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
     
     // 日付
     pdf.setFontSize(10);
     const today = new Date().toLocaleDateString('ja-JP');
-    pdf.text(`Date: ${today}`, 20, 35);
+    pdf.text(`発行日 / Date: ${today}`, 20, 35);
     
     // テーブルデータの準備
     const tableData = items.map((item) => {
@@ -41,11 +48,11 @@ export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSum
     
     // autoTableを使用してテーブルを生成
     autoTable(pdf, {
-      head: [['Model No.', 'Unit Price (JPY)', 'Qty', 'Subtotal (JPY)']],
+      head: [['型番 / Model No.', '単価 / Unit Price (JPY)', '数量 / Qty', '小計 / Subtotal (JPY)']],
       body: tableData,
       startY: 45,
       styles: {
-        font: 'helvetica',
+        font: 'NotoSansJP', // 日本語フォントを指定
         fontSize: 10,
         cellPadding: 3,
       },
@@ -61,7 +68,7 @@ export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSum
         3: { cellWidth: 40, halign: 'right' },
       },
       foot: [[
-        'Total',
+        '合計 / Total',
         '',
         `${totalQuantity}`,
         `${totalPrice.toLocaleString()}`
@@ -78,9 +85,9 @@ export default function InvoiceSummary({ totalQuantity, totalPrice }: InvoiceSum
     pdf.save(filename);
   };
 
-  const handlePDFExport = () => {
+  const handlePDFExport = async () => {
     if (isMobileDevice()) {
-      generateMobilePDF();
+      await generateMobilePDF();
     } else {
       window.print();
     }
