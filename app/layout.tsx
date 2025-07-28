@@ -1,22 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { InvoiceProvider } from "@/contexts/InvoiceContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const notoSansJp = localFont({
+  src: "../public/fonts/NotoSansJP-Regular.otf",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'ポケサーチ',
-  description: 'ポケモンカードの買取価格を検索できます。',
-}
+  title: "ポケサーチ",
+  description: "ポケモンカードの買取価格を検索できます。",
+};
 
 export default function RootLayout({
   children,
@@ -24,13 +19,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <InvoiceProvider>
-          {children}
-        </InvoiceProvider>
+    <html lang="ja">
+      <body className={`${notoSansJp.className} antialiased`}>
+        <InvoiceProvider>{children}</InvoiceProvider>
       </body>
     </html>
   );
