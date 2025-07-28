@@ -1,6 +1,7 @@
 'use client'
 
 import { useInvoice } from '@/contexts/InvoiceContext'
+import { useState } from 'react';
 
 export default function SavedInvoiceList() {
   const { 
@@ -9,13 +10,31 @@ export default function SavedInvoiceList() {
     deleteInvoice, 
     duplicateInvoice,
     printInvoice,
+    updateInvoiceNumber,
     editingInvoiceId 
   } = useInvoice()
+
+  const [editingNumberId, setEditingNumberId] = useState<string | null>(null);
+  const [tempNumber, setTempNumber] = useState('');
   
   const formatInvoiceNumber = (num: number | undefined) => {
     if (typeof num !== 'number') return '----';
     return num.toString().padStart(4, '0');
   }
+
+  const handleNumberEditStart = (invoice: typeof savedInvoices[0]) => {
+    setEditingNumberId(invoice.id);
+    setTempNumber(invoice.invoiceNumber?.toString() || '');
+  };
+
+  const handleNumberEditConfirm = (invoiceId: string) => {
+    const newNumber = parseInt(tempNumber, 10);
+    if (!isNaN(newNumber) && newNumber > 0) {
+      updateInvoiceNumber(invoiceId, newNumber);
+    }
+    setEditingNumberId(null);
+    setTempNumber('');
+  };
 
   if (savedInvoices.length === 0) {
     return (
@@ -49,8 +68,27 @@ export default function SavedInvoiceList() {
           <tbody className="bg-white divide-y divide-gray-200">
             {savedInvoices.sort((a, b) => (b.invoiceNumber || 0) - (a.invoiceNumber || 0)).map((invoice) => (
               <tr key={invoice.id} className={editingInvoiceId === invoice.id ? 'bg-blue-50' : ''}>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">
-                  {formatInvoiceNumber(invoice.invoiceNumber)}
+                <td 
+                  className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 font-mono cursor-pointer"
+                  onClick={() => handleNumberEditStart(invoice)}
+                >
+                  {editingNumberId === invoice.id ? (
+                    <input
+                      type="number"
+                      value={tempNumber}
+                      onChange={(e) => setTempNumber(e.target.value)}
+                      onBlur={() => handleNumberEditConfirm(invoice.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleNumberEditConfirm(invoice.id);
+                        }
+                      }}
+                      className="w-20 p-1 border rounded"
+                      autoFocus
+                    />
+                  ) : (
+                    formatInvoiceNumber(invoice.invoiceNumber)
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {new Date(invoice.savedAt).toLocaleDateString('ja-JP', {

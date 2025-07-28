@@ -32,6 +32,7 @@ interface InvoiceContextType {
   deleteInvoice: (invoiceId: string) => void
   duplicateInvoice: (invoiceId: string) => void;
   printInvoice: (invoiceId?: string) => void;
+  updateInvoiceNumber: (invoiceId: string, newNumber: number) => void;
   editingInvoiceId: string | null;
 }
 
@@ -266,6 +267,20 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateInvoiceNumber = (invoiceId: string, newNumber: number) => {
+    const isDuplicate = savedInvoices.some(inv => inv.invoiceNumber === newNumber && inv.id !== invoiceId);
+    if (isDuplicate) {
+      alert(`納品書番号「${newNumber}」は既に使用されています。別の番号を入力してください。`);
+      return;
+    }
+
+    const updatedInvoices = savedInvoices.map(inv =>
+      inv.id === invoiceId ? { ...inv, invoiceNumber: newNumber } : inv
+    );
+    setSavedInvoices(updatedInvoices);
+    updateLocalStorage(updatedInvoices);
+  };
+
   const deleteInvoice = (invoiceId: string) => {
     if (!window.confirm('この納品書を削除してもよろしいですか？')) return;
     const updatedInvoices = savedInvoices.filter(inv => inv.id !== invoiceId);
@@ -293,6 +308,7 @@ export function InvoiceProvider({ children }: { children: ReactNode }) {
       deleteInvoice,
       duplicateInvoice,
       printInvoice,
+      updateInvoiceNumber,
       editingInvoiceId
     }}>
       {children}
