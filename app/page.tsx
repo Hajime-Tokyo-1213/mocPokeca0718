@@ -12,8 +12,10 @@ function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
     mergedData[priceKey] = baseData[priceKey].map(card => {
       let finalImageUrl = '/no-image.svg'
 
+      // 商品タイトルから【状態B】などを削除
+      const cleanedTitle = card.商品タイトル.replace(/【.*?】/g, '')
       // 価格データの商品タイトルから型番を抽出
-      const cardTitleMatch = card.商品タイトル.match(modelNumberPattern)
+      const cardTitleMatch = cleanedTitle.match(modelNumberPattern)
       const cardModelNumber = cardTitleMatch ? cardTitleMatch[0] : null
 
       if (cardModelNumber) {

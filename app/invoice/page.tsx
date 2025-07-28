@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useInvoice } from '@/contexts/InvoiceContext'
 import InvoiceList from '@/components/InvoiceList'
 import InvoiceSummary from '@/components/InvoiceSummary'
 import SavedInvoiceList from '@/components/SavedInvoiceList'
+import ManualAddForm from '@/components/ManualAddForm'
 
 export default function InvoicePage() {
   const { 
@@ -14,8 +16,10 @@ export default function InvoicePage() {
     saveOrUpdateInvoice, 
     editingInvoiceId, 
     savedInvoices,
-    clearInvoice 
+    clearInvoice,
+    addItem
   } = useInvoice()
+  const [showManualAddForm, setShowManualAddForm] = useState(false)
 
   const editingInvoice = editingInvoiceId 
     ? savedInvoices.find(inv => inv.id === editingInvoiceId) 
@@ -83,6 +87,28 @@ export default function InvoicePage() {
               totalPrice={getTotalPrice()}
             />
           </>
+        )}
+
+        {showManualAddForm ? (
+          <ManualAddForm
+            onAdd={(card, quantity) => {
+              addItem(card, quantity)
+              setShowManualAddForm(false)
+            }}
+            onCancel={() => setShowManualAddForm(false)}
+          />
+        ) : (
+          <div className="mb-6 print:hidden">
+            <button
+              onClick={() => setShowManualAddForm(true)}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              手動で商品を追加
+            </button>
+          </div>
         )}
 
         <SavedInvoiceList />
