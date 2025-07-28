@@ -43,11 +43,11 @@ function parseCSVToCardData(csvText: string): CardData {
     header: false,
   })
 
-  if (parsed.data.length < 3) {
+  if (parsed.data.length < 2) {
     return {}
   }
 
-  for (let i = 2; i < parsed.data.length; i++) {
+  for (let i = 1; i < parsed.data.length; i++) {
     const row = parsed.data[i] as string[]
     
     if (row.length >= 4) {

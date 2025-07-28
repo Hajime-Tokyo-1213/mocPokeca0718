@@ -24,11 +24,26 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
 
     // すべてのカードを1つの配列にフラット化
     const allCards = Object.values(cardData).flat()
+    const lowercasedSearchValue = searchValue.toLowerCase();
 
     // 商品型番が存在し、文字列であることも確認してからフィルタリングする
-    return allCards.filter(card =>
-      card && typeof card.商品型番 === 'string' && card.商品型番.startsWith(searchValue)
-    )
+    return allCards.filter(card => {
+      if (!card) return false;
+
+      const title = card.商品タイトル?.toLowerCase() || '';
+      const model = card.商品型番?.toLowerCase() || '';
+
+      // 入力値が数字のみかどうかを判定
+      const isNumeric = /^\d+$/.test(lowercasedSearchValue);
+
+      if (isNumeric) {
+        // 数字のみの場合は、商品型番の前方一致で検索
+        return model.startsWith(lowercasedSearchValue);
+      } else {
+        // それ以外の場合は、商品タイトルの部分一致で検索
+        return title.includes(lowercasedSearchValue);
+      }
+    });
   }, [searchValue, cardData])
 
   const selectedCard = filteredCards[selectedIndex] || null
