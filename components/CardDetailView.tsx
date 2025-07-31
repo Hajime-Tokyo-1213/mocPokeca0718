@@ -28,6 +28,7 @@ export default function CardDetailView({ card }: CardDetailViewProps) {
           fill
           className="object-contain rounded-lg shadow-xl"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          quality={100}
           priority
         />
       </div>

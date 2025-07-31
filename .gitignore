@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local development files
+spreadsheet.html
+wiz_data.json
+wiz_data_structure.txt
+test-image-fetch.js
+
+# Report files
+エラーレポート*.md
+画像エラー分析レポート.md

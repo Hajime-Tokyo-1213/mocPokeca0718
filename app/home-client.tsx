@@ -8,7 +8,6 @@ import CardDetailView from '@/components/CardDetailView'
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation'
 import { useInvoice } from '@/contexts/InvoiceContext'
-import { Card } from '@/types/card'
 import { CardData } from '@/lib/spreadsheet'
 
 export default function HomeClient({ cardData: initialCardData }: { cardData: CardData }) {

@@ -1,6 +1,7 @@
 import { CardData, fetchCardDataFromSpreadsheet } from '@/lib/spreadsheet'
 import { fallbackCardData } from '@/lib/fallbackData'
-import { fetchAllImageData, ImageData } from '@/lib/imageSpreadsheet'
+import { ImageData } from '@/lib/imageSpreadsheetAlt'
+import { createDefaultImageFetcher } from '@/lib/imageDataFetcher'
 import HomeClient from './home-client'
 
 function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
@@ -47,7 +48,7 @@ export default async function Home() {
   try {
     const [baseCardData, allImageData] = await Promise.all([
       fetchCardDataFromSpreadsheet(),
-      fetchAllImageData()
+      createDefaultImageFetcher().fetchWithFallback()
     ]);
     
     if (Object.keys(baseCardData).length === 0) {

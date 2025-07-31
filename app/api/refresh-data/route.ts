@@ -1,28 +1,52 @@
 import { NextResponse } from 'next/server'
 import { CardData, fetchCardDataFromSpreadsheet } from '@/lib/spreadsheet'
-import { ImageData, fetchAllImageData } from '@/lib/imageSpreadsheet'
+import { ImageData } from '@/lib/imageSpreadsheetAlt'
+import { createDefaultImageFetcher } from '@/lib/imageDataFetcher'
 import { fallbackCardData } from '@/lib/fallbackData'
 
 function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
   const mergedData: CardData = {}
   const modelNumberPattern = /([a-zA-Z0-9-]+\s+\d{1,3}\/\d{1,3})/
+  
+  console.log(`Merging ${Object.values(baseData).flat().length} cards with ${imageData.length} images`)
 
   for (const priceKey in baseData) {
     mergedData[priceKey] = baseData[priceKey].map(card => {
       let finalImageUrl = '/no-image.svg'
 
-      const cardTitleMatch = card.商品タイトル.match(modelNumberPattern)
+      // タイトルからタグを除去
+      const cleanedTitle = card.商品タイトル.replace(/【[^】]+】/g, '').trim()
+      const cardTitleMatch = cleanedTitle.match(modelNumberPattern)
       const cardModelNumber = cardTitleMatch ? cardTitleMatch[0] : null
 
       if (cardModelNumber) {
-        const foundImage = imageData.find(img => {
-          const characterMatch = card.商品タイトル.split(' ')[0] === img.characterName
-          const modelMatch = img.modelNumber === cardModelNumber
-          return characterMatch && modelMatch
+        // キャラクター名を抽出
+        const namePartWithoutModel = cleanedTitle.substring(0, cleanedTitle.lastIndexOf(cardModelNumber)).trim()
+        const nameMatch = namePartWithoutModel.match(/^([^\s]+(?:[ぁ-んァ-ヶー]*)?)/)
+        const cardCharacterName = nameMatch ? nameMatch[1] : namePartWithoutModel.split(' ')[0]
+        
+        // まず厳密なマッチングを試みる
+        let foundImage = imageData.find(img => {
+          return img.characterName === cardCharacterName && img.modelNumber === cardModelNumber
         })
+        
+        // 見つからない場合、型番のみでマッチング
+        if (!foundImage) {
+          foundImage = imageData.find(img => img.modelNumber === cardModelNumber)
+        }
+        
+        // それでも見つからない場合、キャラクター名の部分一致
+        if (!foundImage && cardCharacterName) {
+          foundImage = imageData.find(img => {
+            return img.characterName.includes(cardCharacterName) || cardCharacterName.includes(img.characterName)
+          })
+        }
 
         if (foundImage) {
           finalImageUrl = foundImage.imageUrl
+          console.log(`Matched: "${card.商品タイトル}" -> "${foundImage.title}"`)
+        } else {
+          console.log(`No match found for: "${card.商品タイトル}" (char: "${cardCharacterName}", model: "${cardModelNumber}")`)
         }
       }
 
@@ -40,7 +64,7 @@ export async function GET() {
         console.error('Failed to fetch card data:', error)
         return fallbackCardData
       }),
-      fetchAllImageData().catch((error) => {
+      createDefaultImageFetcher().fetchWithFallback().catch((error) => {
         console.error('Failed to fetch image data:', error)
         return []
       })
