@@ -5,13 +5,11 @@ import { createDefaultImageFetcher } from '@/lib/imageDataFetcher'
 import { fallbackCardData } from '@/lib/fallbackData'
 
 function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
-  const mergedData: CardData = {}
   const modelNumberPattern = /([a-zA-Z0-9-]+\s+\d{1,3}\/\d{1,3})/
   
-  console.log(`Merging ${Object.values(baseData).flat().length} cards with ${imageData.length} images`)
+  console.log(`Merging ${baseData.length} cards with ${imageData.length} images`)
 
-  for (const priceKey in baseData) {
-    mergedData[priceKey] = baseData[priceKey].map(card => {
+  return baseData.map(card => {
       let finalImageUrl = '/no-image.svg'
 
       // タイトルからタグを除去
@@ -25,14 +23,35 @@ function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
         const nameMatch = namePartWithoutModel.match(/^([^\s]+(?:[ぁ-んァ-ヶー]*)?)/)
         const cardCharacterName = nameMatch ? nameMatch[1] : namePartWithoutModel.split(' ')[0]
         
-        // まず厳密なマッチングを試みる
+        // まず厳密なマッチングを試みる（大文字小文字を無視）
         let foundImage = imageData.find(img => {
-          return img.characterName === cardCharacterName && img.modelNumber === cardModelNumber
+          const modelMatch = img.modelNumber.toLowerCase() === cardModelNumber.toLowerCase()
+          const charMatch = img.characterName === cardCharacterName
+          return modelMatch && charMatch
         })
         
-        // 見つからない場合、型番のみでマッチング
+        // 見つからない場合、型番のみでマッチング（大文字小文字を無視）
         if (!foundImage) {
-          foundImage = imageData.find(img => img.modelNumber === cardModelNumber)
+          foundImage = imageData.find(img => {
+            const modelMatch = img.modelNumber.toLowerCase() === cardModelNumber.toLowerCase()
+            if (modelMatch) {
+              // デバッグ用ログ
+              console.log(`[カード${baseData.indexOf(card) + 1}] マッチング結果: {
+  '商品タイトル': '${card.商品タイトル}',
+  '買取価格': '${card.買取価格}',
+  cleanedTitle: '${cleanedTitle}',
+  '抽出型番': '${cardModelNumber}',
+  '抽出キャラ名': '${cardCharacterName}',
+  '画像データ': '${img.title}',
+  '画像型番': '${img.modelNumber}',
+  '画像キャラ名': '${img.characterName}',
+  '型番一致': ${modelMatch},
+  'キャラ名一致': ${img.characterName === cardCharacterName},
+  '結果': '${img.characterName === cardCharacterName ? '○マッチ' : '×不一致'}'
+}`)
+            }
+            return modelMatch
+          })
         }
         
         // それでも見つからない場合、キャラクター名の部分一致
@@ -52,8 +71,6 @@ function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
 
       return { ...card, imageUrl: finalImageUrl }
     })
-  }
-  return mergedData
 }
 
 export async function GET() {

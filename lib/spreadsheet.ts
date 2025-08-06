@@ -1,9 +1,7 @@
 import { Card } from '@/types/card'
 import Papa from 'papaparse'
 
-export type CardData = {
-  [key: string]: Card[]
-}
+export type CardData = Card[]
 
 const SPREADSHEET_ID = '1XhLcAypoY18yQiUWpd0T-9fNpAd3dCf2NEPVRy3iW1E'
 const SHEET_NAME = 'ALLData'
@@ -14,8 +12,7 @@ export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
     console.log('Fetching card base data from spreadsheet:', CSV_URL)
     
     const cardResponse = await fetch(CSV_URL, {
-        next: { revalidate: 300 }, // 5分ごとにキャッシュを更新
-        cache: 'no-store' // キャッシュを無効化
+        cache: 'no-store' // キャッシュを無効化して常に最新データを取得
       })
     
     if (!cardResponse.ok) {
@@ -32,19 +29,19 @@ export async function fetchCardDataFromSpreadsheet(): Promise<CardData> {
     return cardData
   } catch (error) {
     console.error('Error fetching spreadsheet data:', error)
-    return {}
+    return []
   }
 }
 
 function parseCSVToCardData(csvText: string): CardData {
-  const cardData: CardData = {}
+  const cardData: CardData = []
 
   const parsed = Papa.parse(csvText, {
     header: false,
   })
 
   if (parsed.data.length < 2) {
-    return {}
+    return []
   }
 
   for (let i = 1; i < parsed.data.length; i++) {
@@ -60,11 +57,7 @@ function parseCSVToCardData(csvText: string): CardData {
         imageUrl: '/no-image.svg' // デフォルト画像を設定
       }
       
-      const priceKey = row[3]
-      if (!cardData[priceKey]) {
-        cardData[priceKey] = []
-      }
-      cardData[priceKey].push(card)
+      cardData.push(card)
     }
   }
 

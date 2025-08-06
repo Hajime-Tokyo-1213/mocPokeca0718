@@ -2,6 +2,7 @@ import axios from 'axios';
 import { ImageData } from './imageSpreadsheetAlt';
 import { getImageSizeFromEnv } from './imageConfig';
 import { ImageSizeConfig } from './imageUrlTransformer';
+import { StaticDataStrategy, JSONFileStrategy, SampleDataStrategy, AltSpreadsheetStrategy, NetworkMonitorStrategy } from './imageDataStrategies';
 
 /**
  * 画像データ取得のための統合インターフェース
@@ -17,6 +18,7 @@ export interface ImageFetchStrategy {
 export class HTMLParseStrategy implements ImageFetchStrategy {
   name = 'HTML Parse';
   
+  // ウェブに公開されたスプレッドシートの公開ID
   private readonly spreadsheetId = '2PACX-1vRHvYoYFzk-sIRNJL3qf-uyxGQg2BFv0dJ147oHC11UPY0Ob1ovEvz3j6GVc-tOQvGY6nIvev1QXF9o';
   private readonly sheetGids = [
     '615803266', // AR
@@ -33,23 +35,37 @@ export class HTMLParseStrategy implements ImageFetchStrategy {
   async fetch(): Promise<ImageData[]> {
     const allData: ImageData[] = [];
     
+    // 環境変数から画像サイズを取得、デフォルトはLARGE
+    const imageSizeConfig = process.env.NEXT_PUBLIC_IMAGE_SIZE === 'LARGE' 
+      ? { size: 600 } 
+      : getImageSizeFromEnv();
+    
     for (const gid of this.sheetGids) {
       try {
-        const data = await this.fetchSheetData(gid, getImageSizeFromEnv());
+        const data = await this.fetchSheetData(gid, imageSizeConfig);
         allData.push(...data);
         // レート制限対策
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        console.error(`Failed to fetch sheet ${gid}:`, error);
+        console.warn(`Failed to fetch sheet ${gid}:`, error);
       }
     }
     
+    console.log(`HTMLParseStrategy: Fetched total ${allData.length} images`);
     return allData;
   }
 
   private async fetchSheetData(gid: string, imageSizeConfig?: ImageSizeConfig): Promise<ImageData[]> {
+    // ウェブに公開されたスプレッドシートのpubhtmlエンドポイントを使用
     const url = `https://docs.google.com/spreadsheets/d/e/${this.spreadsheetId}/pubhtml?gid=${gid}&single=true`;
-    const response = await axios.get(url);
+    
+    const response = await axios.get(url, {
+      timeout: 30000, // 30秒のタイムアウト
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
     return this.parseHTML(response.data, imageSizeConfig);
   }
 
@@ -97,11 +113,22 @@ export class HTMLParseStrategy implements ImageFetchStrategy {
   }
 
   private extractImageUrl(cellHtml: string): string {
-    const match = cellHtml.match(/src="([^"]+)"/);
-    const originalUrl = match ? match[1] : '';
+    // =IMAGE("URL")形式の場合
+    let match = cellHtml.match(/=IMAGE\(["']([^"']+)["']\)/);
+    if (match) {
+      console.log('Found IMAGE formula URL:', match[1]);
+      return match[1];
+    }
     
-    // 画像URLを高解像度版に変換
-    return originalUrl;
+    // src="URL"形式の場合（従来の形式）
+    match = cellHtml.match(/src="([^"]+)"/);
+    if (match) {
+      console.log('Found src attribute URL:', match[1]);
+      return match[1];
+    }
+    
+    console.log('No image URL found in cell:', cellHtml.substring(0, 100));
+    return '';
   }
 
   private isValidTitle(title: string): boolean {
@@ -140,7 +167,7 @@ export class HTMLParseStrategy implements ImageFetchStrategy {
     transformedUrl = transformedUrl.replace(/=s\d+(-w\d+)?(-h\d+)?(?=(&|$))/, '');
     
     // 新しいサイズを追加
-    const size = sizeConfig?.size || 800;
+    const size = sizeConfig?.size || 600;
     const separator = transformedUrl.includes('?') ? '&' : '?';
     transformedUrl += `${separator}s${size}`;
     
@@ -159,7 +186,6 @@ export class ImageDataFetcher {
   async fetchWithFallback(): Promise<ImageData[]> {
     for (const strategy of this.strategies) {
       try {
-        console.log(`Attempting to fetch images using ${strategy.name} strategy...`);
         const data = await strategy.fetch();
         
         if (data.length > 0) {
@@ -167,7 +193,7 @@ export class ImageDataFetcher {
           return data;
         }
       } catch (error) {
-        console.error(`${strategy.name} strategy failed:`, error);
+        console.warn(`${strategy.name} strategy failed`);
       }
     }
     
@@ -179,6 +205,48 @@ export class ImageDataFetcher {
 // デフォルトのフェッチャーを作成
 export function createDefaultImageFetcher(): ImageDataFetcher {
   const fetcher = new ImageDataFetcher();
-  fetcher.addStrategy(new HTMLParseStrategy());
+  
+  // 環境変数で戦略の優先順位を制御
+  const useSpreadsheetFirst = process.env.NEXT_PUBLIC_USE_SPREADSHEET_FIRST === 'true';
+  const useNetworkMonitor = process.env.NEXT_PUBLIC_USE_NETWORK_MONITOR === 'true';
+  
+  if (useNetworkMonitor) {
+    // ネットワーク監視戦略を最優先
+    // 1. NetworkMonitor（Puppeteerでネットワーク監視）
+    fetcher.addStrategy(new NetworkMonitorStrategy());
+    
+    // 2. 静的TypeScriptデータ（フォールバック）
+    fetcher.addStrategy(new StaticDataStrategy());
+    
+    // 3. Alt実装（公開されたスプレッドシートから取得）
+    fetcher.addStrategy(new AltSpreadsheetStrategy());
+  } else if (useSpreadsheetFirst) {
+    // Spreadsheetを優先する場合
+    // 1. Alt実装（公開されたスプレッドシートから取得）
+    fetcher.addStrategy(new AltSpreadsheetStrategy());
+    
+    // 2. HTMLパース（Google Spreadsheetsが正常な場合）
+    fetcher.addStrategy(new HTMLParseStrategy());
+    
+    // 3. 静的TypeScriptデータ（フォールバック）
+    fetcher.addStrategy(new StaticDataStrategy());
+  } else {
+    // デフォルト：静的データを優先
+    // 1. 静的TypeScriptデータ（最も確実・SSR/CSR両対応）
+    fetcher.addStrategy(new StaticDataStrategy());
+    
+    // 2. Alt実装（公開されたスプレッドシートから取得）
+    fetcher.addStrategy(new AltSpreadsheetStrategy());
+    
+    // 3. HTMLパース（Google Spreadsheetsが正常な場合）
+    fetcher.addStrategy(new HTMLParseStrategy());
+  }
+  
+  // 4. JSONファイルから読み込み（クライアントサイドのみ）
+  fetcher.addStrategy(new JSONFileStrategy());
+  
+  // 5. サンプルデータ（最後の手段）
+  fetcher.addStrategy(new SampleDataStrategy());
+  
   return fetcher;
 }

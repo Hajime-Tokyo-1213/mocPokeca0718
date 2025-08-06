@@ -5,29 +5,72 @@ import { createDefaultImageFetcher } from '@/lib/imageDataFetcher'
 import HomeClient from './home-client'
 
 function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
-  const mergedData: CardData = {}
   // 型番を抽出する正規表現（imageSpreadsheet.tsと共通化を推奨）
   const modelNumberPattern = /([a-zA-Z0-9-]+\s+\d{1,3}\/\d{1,3})/
 
-  for (const priceKey in baseData) {
-    mergedData[priceKey] = baseData[priceKey].map(card => {
+  return baseData.map(card => {
       let finalImageUrl = '/no-image.svg'
 
       // 商品タイトルから【状態B】などを削除
-      const cleanedTitle = card.商品タイトル.replace(/【.*?】/g, '')
+      const cleanedTitle = card.商品タイトル.replace(/【.*?】/g, '').trim()
+      
       // 価格データの商品タイトルから型番を抽出
       const cardTitleMatch = cleanedTitle.match(modelNumberPattern)
       const cardModelNumber = cardTitleMatch ? cardTitleMatch[0] : null
 
       if (cardModelNumber) {
-        // 画像データの中から、キャラクター名と完全な型番が一致するものを探す
+        // 画像データの中から型番が一致するものを探す
         const foundImage = imageData.find(img => {
-          // 1. キャラクター名が画像データのキャラクター名に含まれるか（前方一致の代わり）
-          const characterMatch =
-            card.商品タイトル.split(' ')[0] === img.characterName
-          // 2. 型番が完全に一致するか
-          const modelMatch = img.modelNumber === cardModelNumber
-          return characterMatch && modelMatch
+          // 型番が完全に一致するかチェック（大文字小文字を無視）
+          const modelMatch = img.modelNumber.toLowerCase() === cardModelNumber.toLowerCase()
+          
+          if (!modelMatch) return false
+          
+          // キャラクター名のマッチングを改善
+          // 1. 商品タイトルからキャラクター名を抽出（【】を除去した後）
+          const titleParts = cleanedTitle.split(' ')
+          let characterName = ''
+          
+          // ARやSRなどのレアリティ表記を除外してキャラクター名を抽出
+          for (const part of titleParts) {
+            // 型番パターンやレアリティ表記（AR, SR, UR等）を除外
+            if (!part.match(/^\d+\/\d+$/) && 
+                !part.match(/^[A-Z]{2,3}$/) && 
+                !part.match(modelNumberPattern)) {
+              characterName = part
+              break
+            }
+          }
+          
+          // キャラクター名が画像データのキャラクター名と一致するか
+          const characterMatch = characterName === img.characterName ||
+                                 img.characterName.includes(characterName) ||
+                                 characterName.includes(img.characterName)
+          
+          // デバッグログ（必要に応じて削除）
+          if (process.env.NODE_ENV === 'development') {
+            // 最初の数件のみログ出力
+            const cardIndex = baseData.indexOf(card)
+            if (cardIndex < 3) {
+              console.log(`[カード${cardIndex + 1}] マッチング結果:`, {
+                商品タイトル: card.商品タイトル,
+                買取価格: card.買取価格,
+                cleanedTitle,
+                抽出型番: cardModelNumber,
+                抽出キャラ名: characterName,
+                画像データ: img.title,
+                画像型番: img.modelNumber,
+                画像キャラ名: img.characterName,
+                型番一致: modelMatch,
+                キャラ名一致: characterMatch,
+                結果: modelMatch && characterMatch ? '○マッチ' : '×不一致'
+              })
+            }
+          }
+          
+          // 一時的に型番のみでマッチング（キャラクター名のチェックをスキップ）
+          // TODO: 将来的には正しい画像データに更新する必要がある
+          return modelMatch
         })
 
         if (foundImage) {
@@ -37,8 +80,6 @@ function mergeData(baseData: CardData, imageData: ImageData[]): CardData {
 
       return { ...card, imageUrl: finalImageUrl }
     })
-  }
-  return mergedData
 }
 
 
@@ -51,7 +92,7 @@ export default async function Home() {
       createDefaultImageFetcher().fetchWithFallback()
     ]);
     
-    if (Object.keys(baseCardData).length === 0) {
+    if (baseCardData.length === 0) {
       cardData = fallbackCardData
     } else {
       cardData = mergeData(baseCardData, allImageData)

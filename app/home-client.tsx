@@ -21,8 +21,8 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
   const filteredCards = useMemo(() => {
     if (!searchValue) return []
 
-    // すべてのカードを1つの配列にフラット化
-    const allCards = Object.values(cardData).flat()
+    // cardDataはすでに配列なのでそのまま使用
+    const allCards = cardData
     const lowercasedSearchValue = searchValue.toLowerCase();
 
     // 商品型番が存在し、文字列であることも確認してからフィルタリングする
@@ -74,6 +74,7 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
+      // まずスプレッドシートのデータを更新
       const response = await fetch('/api/refresh-data')
       const result = await response.json()
       
@@ -81,6 +82,27 @@ export default function HomeClient({ cardData: initialCardData }: { cardData: Ca
         setCardData(result.data)
         // 選択インデックスをリセット
         setSelectedIndex(0)
+        
+        // 静的データの更新処理
+        const updateResponse = await fetch('/api/update-static-data', {
+          method: 'POST'
+        })
+        const updateResult = await updateResponse.json()
+        
+        if (updateResult.success) {
+          const { report } = updateResult
+          
+          // 更新結果をアラートで表示
+          const message = `データ更新が完了しました！\n\n` +
+            `総カード数: ${report.totalCards}\n` +
+            `既存カード: ${report.existingCards}\n` +
+            `新規カード: ${report.newCards}\n` +
+            `追加された画像: ${report.imagesAdded}\n` +
+            `画像なし: ${report.missingImages.length}\n` +
+            (report.errors.length > 0 ? `\nエラー: ${report.errors.length}件` : '')
+          
+          alert(message)
+        }
       } else {
         console.error('Failed to refresh data')
         alert('データの更新に失敗しました')

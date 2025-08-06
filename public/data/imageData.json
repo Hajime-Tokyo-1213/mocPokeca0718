@@ -1,0 +1,102 @@
+{
+  "images": [
+    {
+      "title": "ピカチュウ sv11b 100/086",
+      "imageUrl": "/images/sv11b-100-086.jpg",
+      "characterName": "ピカチュウ",
+      "modelNumber": "sv11b 100/086"
+    },
+    {
+      "title": "リザードン sv11b 101/086",
+      "imageUrl": "/images/sv11b-101-086.jpg",
+      "characterName": "リザードン",
+      "modelNumber": "sv11b 101/086"
+    },
+    {
+      "title": "フシギバナ sv11b 102/086",
+      "imageUrl": "/images/sv11b-102-086.jpg",
+      "characterName": "フシギバナ",
+      "modelNumber": "sv11b 102/086"
+    },
+    {
+      "title": "カメックス sv11w 100/086",
+      "imageUrl": "/images/sv11w-100-086.jpg",
+      "characterName": "カメックス",
+      "modelNumber": "sv11w 100/086"
+    },
+    {
+      "title": "イーブイ sv11w 101/086",
+      "imageUrl": "/images/sv11w-101-086.jpg",
+      "characterName": "イーブイ",
+      "modelNumber": "sv11w 101/086"
+    },
+    {
+      "title": "ブラッキー sv11w 102/086",
+      "imageUrl": "/images/sv11w-102-086.jpg",
+      "characterName": "ブラッキー",
+      "modelNumber": "sv11w 102/086"
+    },
+    {
+      "title": "ミュウ sv1a 100/073",
+      "imageUrl": "/images/sv1a-100-073.jpg",
+      "characterName": "ミュウ",
+      "modelNumber": "sv1a 100/073"
+    },
+    {
+      "title": "ルギア sv1s 101/078",
+      "imageUrl": "/images/sv1s-101-078.jpg",
+      "characterName": "ルギア",
+      "modelNumber": "sv1s 101/078"
+    },
+    {
+      "title": "ホウオウ sv1v 102/078",
+      "imageUrl": "/images/sv1v-102-078.jpg",
+      "characterName": "ホウオウ",
+      "modelNumber": "sv1v 102/078"
+    },
+    {
+      "title": "レックウザ sv6 102/101",
+      "imageUrl": "/images/sv6-102-101.jpg",
+      "characterName": "レックウザ",
+      "modelNumber": "sv6 102/101"
+    },
+    {
+      "title": "ディアルガ sv9 101/100",
+      "imageUrl": "/images/sv9-101-100.jpg",
+      "characterName": "ディアルガ",
+      "modelNumber": "sv9 101/100"
+    },
+    {
+      "title": "パルキア sv9 102/100",
+      "imageUrl": "/images/sv9-102-100.jpg",
+      "characterName": "パルキア",
+      "modelNumber": "sv9 102/100"
+    },
+    {
+      "title": "アローラロコン sv10 100/098",
+      "imageUrl": "/images/sv10-100-098.jpg",
+      "characterName": "アローラロコン",
+      "modelNumber": "sv10 100/098"
+    },
+    {
+      "title": "アローラキュウコン sv10 101/098",
+      "imageUrl": "/images/sv10-101-098.jpg",
+      "characterName": "アローラキュウコン",
+      "modelNumber": "sv10 101/098"
+    },
+    {
+      "title": "ガラルフリーザー sv10 102/098",
+      "imageUrl": "/images/sv10-102-098.jpg",
+      "characterName": "ガラルフリーザー",
+      "modelNumber": "sv10 102/098"
+    },
+    {
+      "title": "アセロラ sm12a 102/173",
+      "imageUrl": "/images/sm12a-102-173.jpg",
+      "characterName": "アセロラ",
+      "modelNumber": "sm12a 102/173"
+    }
+  ],
+  "lastUpdated": "2025-08-05T00:00:00Z",
+  "description": "ポケモンカードの画像データ。Google Spreadsheetsが利用できない場合のフォールバックデータです。"
+}
